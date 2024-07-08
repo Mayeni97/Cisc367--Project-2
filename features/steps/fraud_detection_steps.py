@@ -1,24 +1,55 @@
-from behave import given, when, then
+from behave import *
 import pandas as pd
+import uuid
+import datetime
+@given('I use credit card {creditcardid}')
+def step_impl(context, creditcardid):
+    df = pd.read_csv("data/credit_card.csv", index_col = "credit_card_id")
+    limit = int(df.loc[creditcardid,"limit"])
+    context.credit_card_id = creditcardid
+    context.limit = limit
+    print(creditcardid)
 
-# Load the dataset (assuming the file is in the same directory)
-data = pd.read_csv('enriched_transactions.csv')
+@when('I have {transactionid}')
+def step_impl(context, transactionid):
+    context.transaction_id = transactionid
+    df = pd.read_csv("enriched_transactions.csv", index_col="transaction_id")
+    amount = int(df.loc[transactionid, "amount"])
+    context.amount = amount
 
-@given('a set of transaction data')
-def step_given_set_of_transaction_data(context):
-    context.data = data
+@then('percent limit should {percentlimit}')
+def step_impl(context, percentlimit):
+    print(percentlimit)
+    oracle_result = context.amount / context.limit #Oracle
+    print(oracle_result)
+    transaction_id = context.transaction_id
+    transaction_df = pd.read_csv("enriched_transactions.csv", index_col="transaction_id")
+    actual_percent_limit = transaction_df.loc[transaction_id, "%limit"]
+    assert float(oracle_result) == float(percentlimit)
+    assert float(actual_percent_limit) == float(percentlimit)
 
-@when('the {column_name} values are checked')
-def step_when_values_are_checked(context, column_name):
-    context.transactions = context.data[column_name].dropna()
+@then('limit should {limit}')
+def step_impl(context, limit):
+    print(limit)
+    transaction_id = context.transaction_id
+    transaction_df = pd.read_csv("enriched_transactions.csv", index_col="transaction_id")
+    actual_limit = transaction_df.loc[transaction_id, "limit"]
 
-@then('the {column_name} values should be within expected ranges')
-def step_then_values_should_be_within_expected_ranges(context, column_name):
-    MAX_EXPECTED_TRANSACTIONS_24H = 500  # Example threshold for transactions in 24h
-    MAX_EXPECTED_TRANSACTIONS_2WEEKS = 2000  # Example threshold for transactions in 2 weeks
+    assert float(context.limit) == float(limit) #Credit card table's limit
+    assert float(actual_limit) == float(limit)  # Credit card table's limit
+    
 
-    for value in context.transactions:
-        if column_name == 'transactions_last_24h':
-            assert 0 <= value <= MAX_EXPECTED_TRANSACTIONS_24H, f"{column_name} value {value} is out of expected range"
-        elif column_name == 'transactions_last_2weeks':
-            assert 0 <= value <= MAX_EXPECTED_TRANSACTIONS_2WEEKS, f"{column_name} value {value} is out of expected range"
+@then('transactions_last_24h should {transactions_last_24h}')
+def step_impl(context, transactions_last_24h):
+    transaction_id = context.transaction_id
+    transaction_df = pd.read_csv("enriched_transactions.csv", index_col="transaction_id")
+    current_date_time = transaction_df.loc[transaction_id,"date_time"]
+    current_dt  =  datetime.datetime.strptime(current_date_time, "%Y-%m-%d %H:%M:%S.%f")
+    hours_ago = current_dt - datetime.timedelta(hours=24)
+    current_date_time_before_24 = hours_ago.strftime("%Y-%m-%d %H:%M:%S.%f")
+  
+    transaction_df = transaction_df[transaction_df["credit_card_id"] == current_date_time]
+    transaction_df = transaction_df[transaction_df["credit_card_id"] == context.credit_card_id]
+    recent_transactions = transaction_df[(transaction_df["date_time"] < current_date_time) & (transaction_df["date_time"] >= current_date_time_before_24) ]
+
+    assert float(len(recent_transactions)) == float(transactions_last_24h) #Credit card table's limit

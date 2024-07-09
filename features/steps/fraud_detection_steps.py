@@ -52,4 +52,19 @@ def step_impl(context, transactions_last_24h):
     transaction_df = transaction_df[transaction_df["credit_card_id"] == context.credit_card_id]
     recent_transactions = transaction_df[(transaction_df["date_time"] < current_date_time) & (transaction_df["date_time"] >= current_date_time_before_24) ]
 
-    assert float(len(recent_transactions)) == float(transactions_last_24h) #Credit card table's limit
+    assert float(len(recent_transactions)) == float(transactions_last_24h)
+    
+@then('transactions_last_2weeks should {transactions_last_2weeks}')
+def step_impl(context, transactions_last_2weeks):
+    transaction_id = context.transaction_id
+    transaction_df = pd.read_csv("enriched_transactions.csv", index_col="transaction_id")
+    current_date_time = transaction_df.loc[transaction_id,"date_time"]
+    current_dt  =  datetime.datetime.strptime(current_date_time, "%Y-%m-%d %H:%M:%S.%f")
+    two_weeks = current_dt - datetime.timedelta(weeks= 2)
+    current_date_time_before_24 = two_weeks.strftime("%Y-%m-%d %H:%M:%S.%f")
+  
+    transaction_df = transaction_df[transaction_df["credit_card_id"] == current_date_time]
+    transaction_df = transaction_df[transaction_df["credit_card_id"] == context.credit_card_id]
+    recent_transactions = transaction_df[(transaction_df["date_time"] < current_date_time) & (transaction_df["date_time"] >= current_date_time_before_24) ]
+
+    assert float(len(recent_transactions)) == float(transactions_last_2weeks) 

@@ -31,3 +31,17 @@ Feature: Percent Limit
        | a2c6e477-37d1-4b70-8287-3c8d19eb4d9e |ca424c0a-17fb-4d5c-90b2-009b3f69c466 | 0 |
        | a2c6e477-37d1-4b70-8287-3c8d19eb4d9e |48d4b239-cb28-4328-a055-bcb14fc4f5ab | 1 |
        | 14dea739-1647-4b00-b044-53bddccafd0b | 77619230-c653-4183-9ef8-b59cb312581f | 0 |
+
+
+   Scenario Outline:  transactions_last_2weeks
+         Given I use credit card <creditcardid>
+         When I have <transactionid>
+         Then transactions_last_2weeks should <transactions_last_2weeks>
+
+      Examples: credit cards
+         | creditcardid         | transactionid | transactions_last_2weeks |
+         | a2c6e477-37d1-4b70-8287-3c8d19eb4d9e |ca424c0a-17fb-4d5c-90b2-009b3f69c466 | 0 |
+         | a2c6e477-37d1-4b70-8287-3c8d19eb4d9e |48d4b239-cb28-4328-a055-bcb14fc4f5ab | 1 |
+         | 14dea739-1647-4b00-b044-53bddccafd0b | 77619230-c653-4183-9ef8-b59cb312581f | 2 |
+         | 14dea739-1647-4b00-b044-53bddccafd0b | 12dac25d-6099-4de3-ab5c-77a6618dd818 | 4 |
+      
